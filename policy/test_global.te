@@ -28,6 +28,35 @@ optional_policy(`
 	allow testsuite_domain unconfined_t:fd use;
 	allow testsuite_domain unconfined_t:fifo_file { read write ioctl getattr };
 	allow testsuite_domain unconfined_t:process { sigchld };
+
+	# The following rules are for running in a child namespace.
+	# We have to allow unconfined_t in the parent namespace the
+	# same permissions we are allowing to the test domains in the
+	# child namespace or the parent will deny access.
+	# TODO: Maybe move these to the individual .te files where
+	# the corresponding permissions are allowed for the test domains.
+	allow unconfined_t test_ioctl_file_t:file ioctl;
+	allow unconfined_t testsuite_domain:dir search;
+	allow unconfined_t testsuite_domain:file { open getattr read write };
+	allow unconfined_t self:capability2 mac_admin;
+	allow unconfined_t self:memprotect mmap_zero;
+	allow unconfined_t self:process execheap;
+	allow unconfined_t test_create_secretmem_t:anon_inode *;
+	allow unconfined_t test_create_wx_secretmem_t:anon_inode *;
+	allow unconfined_t test_secretmem_inode_t:anon_inode *;
+	allow unconfined_t test_notransition_uffd_t:anon_inode *;
+	allow unconfined_t uffd_t:anon_inode *;
+	allow unconfined_t filesystemdomain:filesystem *;
+	allow unconfined_t keydomain:key *;
+	allow unconfined_t test_newcon_key_t:key *;
+	allow unconfined_t self:binder *;
+	allow unconfined_t deny_assoc_sctp_peer_t:peer recv;
+	allow unconfined_t netlabel_peer_t:peer recv;
+	allow unconfined_t netlabel_sctp_peer_t:peer recv;
+	allow unconfined_t test_sctp_server_packet_t:packet { recv send };
+	allow unconfined_t test_server_packet_t:packet { recv send };
+	allow unconfined_t netlabel_peer_t:sctp_socket association;
+
 ')
 
 optional_policy(`
