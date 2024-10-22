@@ -8,6 +8,13 @@ BEGIN {
     chomp($basedir);
     $proto = basename($basedir);
 
+    if ( -e '/sys/fs/selinux/unshare' ) {
+        $unshared = `cat /sys/fs/selinux/unshare`;
+    }
+    else {
+        $unshared = 0;
+    }
+
     if ( $proto eq "tcp" or $proto eq "mptcp" ) {
         $is_stream   = 1;
         $fail_value1 = 5;
@@ -25,7 +32,8 @@ BEGIN {
     }
 
     $test_ipsec = 0;
-    if (    system("ip xfrm policy help 2>&1 | grep -q ctx") eq 0
+    if (    not($unshared)
+        and system("ip xfrm policy help 2>&1 | grep -q ctx") eq 0
         and system("ip xfrm policy list &>/dev/null") eq 0 )
     {
         $test_count += 4;
