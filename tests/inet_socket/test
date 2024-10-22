@@ -9,45 +9,59 @@ BEGIN {
     $proto = basename($basedir);
 
     if ( -e '/sys/fs/selinux/unshare' ) {
-        $unshared = `cat /sys/fs/selinux/unshare`;
+        $is_unshared = `cat /sys/fs/selinux/unshare`;
     }
     else {
-        $unshared = 0;
+        $is_unshared = 0;
     }
 
     if ( $proto eq "tcp" or $proto eq "mptcp" ) {
         $is_stream   = 1;
         $fail_value1 = 5;
         $fail_value2 = 5;
-        $test_count  = 19;
+        if ($is_unshared) {
+            $test_count = 7;
+        }
+        else {
+            $test_count = 19;
+        }
     }
     elsif ( $proto eq "udp" ) {
         $is_stream   = 0;
         $fail_value1 = 9;
         $fail_value2 = 8;
-        $test_count  = 11;
+        if ($is_unshared) {
+            $test_count = 5;
+        }
+        else {
+            $test_count = 11;
+        }
     }
     else {
         plan skip => "unknown protocol name \'$proto\'";
     }
 
     $test_ipsec = 0;
-    if ( $unshared == 0 and system("ip xfrm policy help 2>&1 | grep -q ctx") eq 0 ) {
+    if ( not($is_unshared)
+        and system("ip xfrm policy help 2>&1 | grep -q ctx") eq 0 )
+    {
         $test_count += 4;
         $test_ipsec = 1;
     }
 
     # Determine if CALIPSO supported by netlabelctl(8) and kernel.
-    $test_calipso = 0;
-    $netlabelctl  = `netlabelctl -V`;
-    $netlabelctl =~ s/\D//g;
-    $kvercur = `uname -r`;
-    chomp($kvercur);
+    if ( not($is_unshared) ) {
+        $test_calipso = 0;
+        $netlabelctl  = `netlabelctl -V`;
+        $netlabelctl =~ s/\D//g;
+        $kvercur = `uname -r`;
+        chomp($kvercur);
 
-    $rc = `$basedir/../kvercmp $kvercur 4.8`;
-    if ( $netlabelctl gt "021" and $rc > 0 ) {
-        $test_count += $is_stream ? 3 : 2;
-        $test_calipso = 1;
+        $rc = `$basedir/../kvercmp $kvercur 4.8`;
+        if ( $netlabelctl gt "021" and $rc > 0 ) {
+            $test_count += $is_stream ? 3 : 2;
+            $test_calipso = 1;
+        }
     }
 
     # Determine if kernel has legacy iptables support
@@ -120,107 +134,111 @@ server_end($pid);
 # Flush NetLabel configuration.
 system "/bin/sh $basedir/cipso-fl-flush";
 
-# Load NetLabel configuration for CIPSO/IPv4 using TAG 1 over loopback.
-system "/bin/sh $basedir/cipso-load-t1";
+if ( not($is_unshared) ) {
 
-if ($is_stream) {
+    # Load NetLabel configuration for CIPSO/IPv4 using TAG 1 over loopback.
+    system "/bin/sh $basedir/cipso-load-t1";
 
-    # Start the server with a defined level.
-    $pid =
-      server_start( "-t test_inet_server_t -l s0:c20.c250", "$proto 65535" );
+    if ($is_stream) {
+
+        # Start the server with a defined level.
+        $pid =
+          server_start( "-t test_inet_server_t -l s0:c20.c250",
+            "$proto 65535" );
 
 # Verify that authorized client can communicate with the server using level within T1 range.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c61.c239 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c61.c239 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
 # Verify that authorized client cannot communicate with the server using different level.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c19,c120 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
 # TAG 1 allows categories 0 to 239 to be sent, if greater then ENOSPC (No space left on device)
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c0.c240 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
-    # Kill the server.
-    server_end($pid);
-}
-else {
-    # Start the server with a defined level.
-    $pid =
-      server_start( "-t test_inet_server_t -l s0:c20.c50", "$proto 65535" );
+        # Kill the server.
+        server_end($pid);
+    }
+    else {
+        # Start the server with a defined level.
+        $pid =
+          server_start( "-t test_inet_server_t -l s0:c20.c50", "$proto 65535" );
 
 # Verify that authorized client can communicate with the server using same levels.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c20.c50 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c20.c50 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
 # Verify that authorized client cannot communicate with the server using levels dominating the server.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c40.c51 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
-    # Kill the server.
-    server_end($pid);
-}
+        # Kill the server.
+        server_end($pid);
+    }
 
-# Flush NetLabel configuration.
-system "/bin/sh $basedir/cipso-flush";
+    # Flush NetLabel configuration.
+    system "/bin/sh $basedir/cipso-flush";
 
-# Load NetLabel configuration for CIPSO/IPv4 using TAG 2 over loopback.
-system "/bin/sh $basedir/cipso-load-t2";
+    # Load NetLabel configuration for CIPSO/IPv4 using TAG 2 over loopback.
+    system "/bin/sh $basedir/cipso-load-t2";
 
-if ($is_stream) {
+    if ($is_stream) {
 
-    # Start the server with a defined level.
-    $pid =
-      server_start( "-t test_inet_server_t -l s0:c0.c100", "$proto 65535" );
+        # Start the server with a defined level.
+        $pid =
+          server_start( "-t test_inet_server_t -l s0:c0.c100", "$proto 65535" );
 
     # Verify that authorized client can communicate with the server using level.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c90.c100 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c90.c100 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
     # Verify that authorized client can communicate with the server using level.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c0.c14 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c0.c14 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
 # Verify that authorized client cannot communicate with the server using different level.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c101 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
 # TAG 2 allows a maximum of 15 categories in exchange, if greater then ENOSPC (No space left on device)
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c0.c16 -- $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
-    # Kill the server.
-    server_end($pid);
-}
-else {
-    # Start the server with a defined level.
-    $pid = server_start( "-t test_inet_server_t -l s0:c0.c14", "$proto 65535" );
+        # Kill the server.
+        server_end($pid);
+    }
+    else {
+        # Start the server with a defined level.
+        $pid =
+          server_start( "-t test_inet_server_t -l s0:c0.c14", "$proto 65535" );
 
 # Verify that authorized client can communicate with the server using same levels.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c0.c14 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c0.c14 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
 # Verify that authorized client cannot communicate with the server using levels dominating the server.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c15 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
-    # Kill the server.
-    server_end($pid);
-}
+        # Kill the server.
+        server_end($pid);
+    }
 
-# Flush NetLabel configuration.
-system "/bin/sh $basedir/cipso-flush";
+    # Flush NetLabel configuration.
+    system "/bin/sh $basedir/cipso-flush";
 
 # Load NetLabel configuration for CIPSO/IPv4 using TAG 5 over loopback.
 # TAG 5 allows a maximum of 7 ranges in exchange, if greater then ENOSPC (No space left on device), however
@@ -229,50 +247,53 @@ system "/bin/sh $basedir/cipso-flush";
 # * of category ranges is 7, but if the low end of the last category range is
 # * zero then it is possible to fit 8 category ranges because the zero should
 # * be omitted. */
-system "/bin/sh $basedir/cipso-load-t5";
+    system "/bin/sh $basedir/cipso-load-t5";
 
-# Start the server with a defined level.
-$pid = server_start( "-t test_inet_server_t -l s0:c0.c100", "$proto 65535" );
-
-# Verify that authorized client can communicate with the server using level.
-$result = system
-"runcon -t test_inet_client_t -l s0:c0.c100 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c0.c100 $proto 127.0.0.1 65535";
-ok( $result eq 0 );
-
-if ($is_stream) {
+    # Start the server with a defined level.
+    $pid =
+      server_start( "-t test_inet_server_t -l s0:c0.c100", "$proto 65535" );
 
     # Verify that authorized client can communicate with the server using level.
     $result = system
-"runcon -t test_inet_client_t -l s0:c8.c100 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c8.c100 $proto 127.0.0.1 65535";
+"runcon -t test_inet_client_t -l s0:c0.c100 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c0.c100 $proto 127.0.0.1 65535";
     ok( $result eq 0 );
+
+    if ($is_stream) {
+
+    # Verify that authorized client can communicate with the server using level.
+        $result = system
+"runcon -t test_inet_client_t -l s0:c8.c100 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c8.c100 $proto 127.0.0.1 65535";
+        ok( $result eq 0 );
 
 # Verify that authorized client cannot communicate with the server using different level.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c8.c101 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
 
-    # Verify ok with the 8 entries when cat c0:
-    $result = system
+        # Verify ok with the 8 entries when cat c0:
+        $result = system
 "runcon -t test_inet_client_t -l s0:c0.c3,c20.c25,c30.c36,c40.c45,c50.c55,c60.c66,c70.c78,c80.c88 $basedir/client -e system_u:object_r:netlabel_peer_t:s0:c0.c3,c20.c25,c30.c36,c40.c45,c50.c55,c60.c66,c70.c78,c80.c88 $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+        ok( $result eq 0 );
 
-    # Verify fail with the 8 entries when cat !c0:
-    $result = system
+        # Verify fail with the 8 entries when cat !c0:
+        $result = system
 "runcon -t test_inet_client_t -l s0:c20.c25,c30.c36,c40.c45,c50.c55,c60.c66,c70.c78,c80.c88,c90.c99 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
-}
-else {
+        ok( $result >> 8 eq $fail_value1 );
+    }
+    else {
 # Verify that authorized client cannot communicate with the server using levels dominating the server.
-    $result = system
+        $result = system
 "runcon -t test_inet_client_t -l s0:c40.c101 $basedir/client $proto 127.0.0.1 65535 2>&1";
-    ok( $result >> 8 eq $fail_value1 );
+        ok( $result >> 8 eq $fail_value1 );
+    }
+
+    # Kill the server.
+    server_end($pid);
+
+    # Flush NetLabel configuration.
+    system "/bin/sh $basedir/cipso-flush";
+
 }
-
-# Kill the server.
-server_end($pid);
-
-# Flush NetLabel configuration.
-system "/bin/sh $basedir/cipso-flush";
 
 # Verify that authorized domain can bind.
 $result =
