@@ -17,6 +17,7 @@ POL_VERS := $(shell $(CHECKPOLICY) -V |cut -f 1 -d ' ')
 MOD_POL_VERS := $(shell $(CHECKMODULE) -V |cut -f 2 -d '-')
 MAX_KERNEL_POLICY := $(shell cat $(SELINUXFS)/policyvers)
 POL_TYPE := $(shell ./pol_detect $(SELINUXFS))
+CONTAINER := $(shell ./container_detect)
 
 # Filter out unavailable filesystems
 FILESYSTEMS := $(foreach fs,$(FILESYSTEMS),$(shell modprobe $(fs) > /dev/null 2>&1 && echo $(fs)))
@@ -172,6 +173,10 @@ endif
 
 ifeq ($(DISTRO),RHEL7)
     SUBDIRS:=$(filter-out netlink_socket, $(SUBDIRS))
+endif
+
+ifeq ($(CONTAINER),1))
+    SUBDIRS:=$(filter-out sysctl module_load, $(SUBDIRS))
 endif
 
 .PHONY: all test clean
