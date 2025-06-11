@@ -1,6 +1,18 @@
 #!/bin/sh
 # Flush the security table.
-iptables -t security -F
-iptables -t security -X NEWCONN
-ip6tables -t security -F
-ip6tables -t security -X NEWCONN
+if [ -f /usr/sbin/iptables-legacy ]; then
+    IPTABLES=iptables-legacy
+else
+    IPTABLES=iptables
+fi
+
+if [ -f /usr/sbin/ip6tables-legacy ]; then
+    IP6TABLES=ip6tables-legacy
+else
+    IP6TABLES=ip6tables
+fi
+
+$IPTABLES -t security -F
+$IPTABLES -t security -X NEWCONN
+$IP6TABLES -t security -F
+$IP6TABLES -t security -X NEWCONN
