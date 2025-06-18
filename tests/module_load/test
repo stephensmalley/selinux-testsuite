@@ -25,10 +25,40 @@ BEGIN {
     plan tests => 17;
 }
 
+# Read current lockdown mode
+my $lockdown_mode;
+if (open(my $fh, '<', '/sys/kernel/security/lockdown')) {
+    my $line = <$fh>;
+    close($fh);
+
+    if ($line =~ /\[([^\]]+)\]/) {
+        $lockdown_mode = $1;
+    } else {
+        warn "Warning: Could not determine active lockdown mode, assuming lockdown mode is 'none'.";
+        $lockdown_mode = "none";
+    }
+} else {
+    warn "Warning: Cannot read /sys/kernel/security/lockdown, assuming lockdown mode is 'none'.";
+    $lockdown_mode = "none";
+}
+
+print "Current lockdown mode: $lockdown_mode\n";
+
+# In cases 1 and 5,
+# In lockdown integrity mode, the expected error code is 129 i.e. Key is rejected by the service error
+# In lockdown none mode, no error is expected.
+$expected_pass = ($lockdown_mode eq 'none') ? 0 : 129;
+
+# In cases 4 and 8,
+# In lockdown integrity mode, the expected error code is 129 i.e. Key is rejected by the service error
+# In lockdown none mode, the error expected is 13 i.e.  EACCES
+$expected_fail = ($lockdown_mode eq 'none') ? 13 : 129;
+
+
 print "Test finit_module(2)\n";
 $result = system
 "runcon -t test_kmodule_t $basedir/finit_load $v $basedir setest_module_request";
-ok( $result eq 0 );
+ok( $result >> 8 eq $expected_pass );
 
 # Deny capability { sys_module } - EPERM
 $result = system
@@ -43,12 +73,12 @@ ok( $result >> 8 eq 13 );
 # Deny system { module_request } - EACCES
 $result = system
 "runcon -t test_kmodule_deny_module_request_t $basedir/finit_load $v $basedir setest_module_request 2>&1";
-ok( $result >> 8 eq 13 );
+ok( $result >> 8 eq $expected_fail );
 
 print "Test init_module(2)\n";
 $result = system
 "runcon -t test_kmodule_t $basedir/init_load $v $basedir setest_module_request";
-ok( $result eq 0 );
+ok( $result >> 8 eq $expected_pass );
 
 # Deny capability { sys_module } - EPERM
 $result = system
@@ -63,7 +93,7 @@ ok( $result >> 8 eq 13 );
 # Deny system { module_request } - EACCES
 $result = system
 "runcon -t test_kmodule_deny_module_request_t $basedir/init_load $v $basedir setest_module_request 2>&1";
-ok( $result >> 8 eq 13 );
+ok( $result >> 8 eq $expected_fail );
 
 SKIP: {
     skip(
