@@ -1,5 +1,5 @@
 TARGETS = bpf_test
-DEPS = bpf_common.c bpf_common.h
+SRCS = bpf_test.c bpf_common.c token_test.c
 LDLIBS += -lselinux -lbpf
 
 # export so that BPF_ENABLED entries get built correctly on local build
@@ -14,4 +14,6 @@ clean:
 	rm -f $(TARGETS) test_sock flag *_flag
 	@set -e; for i in $(BPF_ENABLED); do $(MAKE) -C $$i clean ; done
 
-$(TARGETS): $(DEPS)
+$(TARGETS): $(SRCS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
+

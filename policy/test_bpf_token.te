@@ -1,0 +1,42 @@
+########################################
+#
+# Policy for testing BPF map create and program load with BPF token
+
+################### Allow map_create_as and prog_load_as ###################
+fs_list_bpf_dirs(test_bpf_t)
+allow test_bpf_t bpf_t:filesystem mount;
+allow test_bpf_t root_t:dir mounton;
+allow test_bpf_t self:bpf { map_create_as prog_load_as };
+allow test_bpf_t self:cap2_userns { bpf perfmon };
+allow test_bpf_t self:cap_userns { net_admin setgid setuid sys_admin };
+allow test_bpf_t self:user_namespace create;
+
+############################ Deny map_create_as ############################
+type test_bpf_deny_map_create_as_t;
+testsuite_domain_type(test_bpf_deny_map_create_as_t)
+typeattribute test_bpf_deny_map_create_as_t bpfdomain;
+allow test_bpf_deny_map_create_as_t self:process { setrlimit };
+allow test_bpf_deny_map_create_as_t self:capability { sys_resource sys_admin };
+
+fs_list_bpf_dirs(test_bpf_deny_map_create_as_t)
+allow test_bpf_deny_map_create_as_t bpf_t:filesystem mount;
+allow test_bpf_deny_map_create_as_t root_t:dir mounton;
+allow test_bpf_deny_map_create_as_t self:bpf { map_create map_read map_write prog_load prog_load_as };
+allow test_bpf_deny_map_create_as_t self:cap2_userns { bpf };
+allow test_bpf_deny_map_create_as_t self:cap_userns { setgid setuid sys_admin };
+allow test_bpf_deny_map_create_as_t self:user_namespace create;
+
+############################ Deny prog_load_as #############################
+type test_bpf_deny_prog_load_as_t;
+testsuite_domain_type(test_bpf_deny_prog_load_as_t)
+typeattribute test_bpf_deny_prog_load_as_t bpfdomain;
+allow test_bpf_deny_prog_load_as_t self:process { setrlimit };
+allow test_bpf_deny_prog_load_as_t self:capability { sys_resource sys_admin };
+
+fs_list_bpf_dirs(test_bpf_deny_prog_load_as_t)
+allow test_bpf_deny_prog_load_as_t bpf_t:filesystem mount;
+allow test_bpf_deny_prog_load_as_t root_t:dir mounton;
+allow test_bpf_deny_prog_load_as_t self:bpf { map_create map_create_as map_read map_write prog_load };
+allow test_bpf_deny_prog_load_as_t self:cap2_userns { bpf perfmon };
+allow test_bpf_deny_prog_load_as_t self:cap_userns { net_admin setgid setuid sys_admin };
+allow test_bpf_deny_prog_load_as_t self:user_namespace create;
