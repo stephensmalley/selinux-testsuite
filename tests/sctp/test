@@ -17,12 +17,7 @@ BEGIN {
     $basedir = $0;
     $basedir =~ s|(.*)/[^/]*|$1|;
 
-    if ( -e '/sys/fs/selinux/unshare' ) {
-        $is_unshared = `cat /sys/fs/selinux/unshare`;
-    }
-    else {
-        $is_unshared = 0;
-    }
+    $is_unshared = 1;
 
     # allow SCTP info to be shown during tests
     $v = $ARGV[0];
