@@ -8,12 +8,7 @@ BEGIN {
     chomp($basedir);
     $proto = basename($basedir);
 
-    if ( -e '/sys/fs/selinux/unshare' ) {
-        $is_unshared = `cat /sys/fs/selinux/unshare`;
-    }
-    else {
-        $is_unshared = 0;
-    }
+    $is_unshared = 1;
 
     if ( $proto eq "tcp" or $proto eq "mptcp" ) {
         $is_stream   = 1;
