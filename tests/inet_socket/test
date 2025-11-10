@@ -24,11 +24,23 @@ BEGIN {
         plan skip => "unknown protocol name \'$proto\'";
     }
 
+    if ( -e '/sys/fs/selinux/maxns' ) {
+        $is_unshared = 1;
+    }
+    else {
+        $is_unshared = 0;
+    }
+
     $test_ipsec = 0;
     if (    system("ip xfrm policy help 2>&1 | grep -q ctx") eq 0
         and system("ip xfrm policy list &>/dev/null") eq 0 )
     {
-        $test_count += 4;
+        if ($is_unshared) {
+            $test_count += 2;
+        }
+        else {
+            $test_count += 4;
+        }
         $test_ipsec = 1;
     }
 
@@ -318,18 +330,21 @@ if ($test_ipsec) {
     # Start the server.
     $pid = server_start( "-t test_inet_server_t", "$proto 65535" );
 
-    # Verify that authorized client can communicate with the server.
-    $result =
-      system
-      "runcon -t test_inet_client_t $basedir/client $proto 127.0.0.1 65535";
-    ok( $result eq 0 );
+    if ( not $is_unshared ) {
+
+        # Verify that authorized client can communicate with the server.
+        $result =
+          system
+          "runcon -t test_inet_client_t $basedir/client $proto 127.0.0.1 65535";
+        ok( $result eq 0 );
+    }
 
     # Verify that unauthorized client cannot communicate with the server.
     $result = system
 "runcon -t test_inet_bad_client_t -- $basedir/client $proto 127.0.0.1 65535 2>&1";
     ok( $result >> 8 eq $fail_value2 );
 
-    if ($is_stream) {
+    if ( $is_stream and not $is_unshared ) {
 
         # Verify that authorized client can communicate with the server.
         $result =
@@ -346,7 +361,7 @@ if ($test_ipsec) {
     # Kill the server.
     server_end($pid);
 
-    if ( not $is_stream ) {
+    if ( not $is_stream and not $is_unshared ) {
 
    # Start the server for IPSEC test using IPv6 but do not request peer context.
         $pid = server_start( "-t test_inet_server_t", "-n $proto 65535" );
