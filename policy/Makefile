@@ -105,6 +105,13 @@ ifeq ($(shell grep -q bpf $(POLDEV)/include/support/all_perms.spt && echo true),
 TARGETS += test_bpf.te test_fdreceive_bpf.te test_binder_bpf.te
 endif
 
+# bpf token test dependencies: bpf permission, bpf_token capability
+ifeq ($(shell [ -f /sys/fs/selinux/class/bpf/perms/map_create_as ] && [ -f /sys/fs/selinux/class/bpf/perms/prog_load_as ] && echo true),true)
+ifeq ($(shell [ -f $(SELINUXFS)/policy_capabilities/bpf_token_perms ] && grep -q 1 $(SELINUXFS)/policy_capabilities/bpf_token_perms && echo true),true)
+TARGETS += test_bpf_token.te
+endif
+endif
+
 ifeq ($(shell grep -q all_key_perms $(POLDEV)/include/support/all_perms.spt && echo true),true)
 TARGETS += test_keys.te test_watchkey.te
 endif

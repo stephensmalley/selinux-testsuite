@@ -6,11 +6,24 @@ BEGIN {
     $basedir =~ s|(.*)/[^/]*|$1|;
     $fdr_basedir    = "$basedir/../fdreceive";
     $binder_basedir = "$basedir/../binder";
+    $test_bpf_token = 0;
 
     $test_bpf_count       = 7;
     $test_fdreceive_count = 4;
 
     $test_count = $test_bpf_count + $test_fdreceive_count;
+
+    if (
+        system(
+"grep -q 1 /sys/fs/selinux/policy_capabilities/bpf_token_perms 2> /dev/null"
+        ) == 0
+      )
+    {
+        $test_bpf_token = 1;
+
+        $test_bpf_token_count = 6;
+        $test_count += $test_bpf_token_count;
+    }
 
     # allow info to be shown during tests
     $v = $ARGV[0];
@@ -91,6 +104,38 @@ ok($result);
 $result =
   system "runcon -t test_bpf_deny_prog_run_t $basedir/bpf_test -p $v 2>&1";
 ok($result);
+
+if ($test_bpf_token) {
+
+    # BPF token - BPF_MAP_CREATE_AS, BPF_PROG_LOAD_AS
+    $result = system "runcon -t test_bpf_t $basedir/bpf_test -c $v";
+    ok( $result eq 0 );
+
+    $result = system "runcon -t test_bpf_t $basedir/bpf_test -l $v";
+    ok( $result eq 0 );
+
+    # BPF token - deny BPF_MAP_CREATE_AS
+    $result =
+      system
+      "runcon -t test_bpf_deny_map_create_as_t $basedir/bpf_test -c $v 2>&1";
+    ok($result);
+
+    # BPF token - deny BPF_PROG_LOAD_AS
+    $result =
+      system
+      "runcon -t test_bpf_deny_prog_load_as_t $basedir/bpf_test -l $v 2>&1";
+    ok($result);
+
+    # BPF token cross-domain capability check - SUCCESS case
+    system("chcon -t test_file_t $basedir/token_child_helper");
+    $result = system "runcon -t test_bpf_t $basedir/bpf_test -s $v";
+    ok( $result eq 0 );
+
+    # BPF token cross-domain capability check - FAILURE case
+    system("chcon -t test_bpf_deny_helper_exec_t $basedir/token_child_helper");
+    $result = system "runcon -t test_bpf_t $basedir/bpf_test -f $v 2>&1";
+    ok($result);
+}
 
 #
 ################ BPF Tests for fdreceive #######################

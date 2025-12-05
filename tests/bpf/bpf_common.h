@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <libgen.h>
 #include <selinux/selinux.h>
 #include <bpf/bpf.h>
 #include <linux/bpf.h>
@@ -12,6 +13,10 @@
 extern int create_bpf_map(void);
 extern int create_bpf_prog(void);
 extern void bpf_setrlimit(void);
+extern int test_bpf_map_create(void);
+extern int test_bpf_prog_load(void);
+extern int test_bpf_token_cap_cross_success(void);
+extern int test_bpf_token_cap_cross_failure(void);
 
 /* edited eBPF instruction library */
 /* Short form of mov, dst_reg = imm32 */
@@ -32,3 +37,11 @@ extern void bpf_setrlimit(void);
 					       .off   = 0,			\
 							.imm   = 0 })
 
+/* Raw code statement block */
+#define BPF_RAW_INSN(CODE, DST, SRC, OFF, IMM)			\
+	((struct bpf_insn) {					\
+		.code  = CODE,					\
+			.dst_reg = DST,					\
+				.src_reg = SRC,					\
+					.off   = OFF,					\
+						.imm   = IMM })
