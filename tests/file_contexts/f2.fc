@@ -1,0 +1,4 @@
+/base             system_u:object_r:test_base_t:s0
+/base(/.*)?       system_u:object_r:test_base_wildcard_t:s0
+/base/sub         system_u:object_r:test_base_sub_t:s0
+/base/file\.list  system_u:object_r:test_file_list_t:s0

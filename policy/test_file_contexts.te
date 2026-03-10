@@ -1,0 +1,6 @@
+####### Policy for testing file_contexts #########
+
+type test_base_t;
+type test_base_wildcard_t;
+type test_base_sub_t;
+type test_file_list_t;
