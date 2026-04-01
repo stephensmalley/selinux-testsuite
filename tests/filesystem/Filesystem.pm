@@ -129,6 +129,9 @@ sub make_fs {
     elsif ( $mk_type eq "btrfs" ) {
         $mk_size = 128;
     }
+    elsif ( $mk_type eq "f2fs" ) {
+        $mk_size = 64;
+    }
 
     print "Create $mk_dir/fstest with dd\n";
     $result =

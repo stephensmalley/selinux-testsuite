@@ -4,7 +4,7 @@ SBINDIR ?= $(PREFIX)/sbin
 POLDEV ?= $(PREFIX)/share/selinux/devel
 INCLUDEDIR ?= $(PREFIX)/include
 SELINUXFS ?= /sys/fs/selinux
-FILESYSTEMS ?= ext4 xfs jfs vfat btrfs
+FILESYSTEMS ?= ext4 xfs jfs vfat btrfs f2fs
 
 export CFLAGS+=-g -O0 -Wall -D_GNU_SOURCE
 
