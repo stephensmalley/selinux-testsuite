@@ -42,8 +42,11 @@
         semodule -c -E base
         sed -i \
           -e 's/\((class system (ipc_info syslog_read syslog_mod syslog_console module_request module_load \)\(halt reboot status start stop enable disable reload undefined ))\)/\1firmware_load kexec_image_load kexec_initramfs_load policy_load x509_certificate_load \2/' \
+          -e 's/map_create/map_create map_create_as/' \
+          -e 's/prog_load/prog_load prog_load_as/' \
           base.cil
         echo "(policycap netlink_xperm)" >>base.cil
+        echo "(policycap bpf_token_perms)" >>base.cil
         # allow nlmsg to some system domains so that the system can boot
         for source in daemon initrc_domain systemprocess unconfined_domain_type sysadm_t; do
           echo "(allow $source self (netlink_route_socket (nlmsg)))" >>base.cil
@@ -55,6 +58,8 @@
         rm -f base.cil
         sed -i.orig \
           -e 's/module_load /module_load firmware_load kexec_image_load kexec_initramfs_load policy_load x509_certificate_load /' \
+          -e 's/map_create/map_create map_create_as/' \
+          -e 's/prog_load/prog_load prog_load_as/' \
           /usr/share/selinux/devel/include/support/all_perms.spt
         ;;
       local)
