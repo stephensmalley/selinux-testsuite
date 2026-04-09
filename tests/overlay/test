@@ -19,7 +19,7 @@ BEGIN {
         plan skip_all => "overlayfs upperdir not supported on NFS";
     }
     else {
-        plan tests => 119;
+        plan tests => 135;
     }
 }
 
@@ -40,6 +40,14 @@ sub access {
     my ( $filename, $accesstype ) = @_;
     $result = system(
 "runcon -t test_overlay_client_t -l s0:c10,c20 $basedir/access $filename $accesstype"
+    );
+    return $result >> 8;
+}
+
+sub mmap {
+    my ( $filename, $accesstype ) = @_;
+    $result = system(
+"runcon -t test_overlay_client_t -l s0:c10,c20 $basedir/map_access $filename $accesstype 2>&1"
     );
     return $result >> 8;
 }
@@ -104,7 +112,7 @@ sub test_4_0_ctx {
     $output = getfilecon("$basedir/container1/upper/writefile");
 
     # Newly created writefile should have s0 MCS Label since it was copied up
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_5 {
@@ -130,7 +138,7 @@ sub test_5_1 {
     $output = getfilecon("$basedir/container1/upper/newdir");
 
     # Newly created writedir should have s0:c10,c20 since it was created new
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_5_2 {
@@ -148,7 +156,7 @@ sub test_5_3 {
     $output = getfilecon("$basedir/container1/upper/newdir/touchlink");
 
     # Newly created writelink should have s0:c10,c20 since it was created new
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_6 {
@@ -182,7 +190,7 @@ sub test_7_0_ctx {
     $output = getfilecon("$basedir/container1/upper/writedir/bar");
 
     # Newly created bar should have s0:c10,c20 since it was created new
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_7_1 {
@@ -208,7 +216,7 @@ sub test_7_1_0_ctx {
     $output = getfilecon("$basedir/container1/upper/writedir/writelink");
 
     # Newly created writelink should have s0:c10,c20 since it was created new
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_7_2 {
@@ -452,7 +460,7 @@ sub test_42_ctx {
     $output = getfilecon("$basedir/container1/upper/transition");
 
     # Newly created writeout should have s0:c10,c20 since it was created new
-    ok( $output eq "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20" );
+    ok( $output eq "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20" );
 }
 
 sub test_43 {
@@ -551,6 +559,85 @@ sub test_67 {
     print "Check write to read null device should fail\n";
     $result = access( "$basedir/container1/merged/null_read", "W_OK" );
     ok( $result eq 13 );
+    return;
+}
+
+sub test_68_1 {
+    print "Check read map access on noaccessfile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/noaccessfile", "R_OK" );
+    ok( $result eq 2 );
+    return;
+}
+
+sub test_68_2 {
+    print "Check write map access on noaccessfile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/noaccessfile", "W_OK" );
+    ok( $result eq 2 );
+    return;
+}
+
+sub test_68_3 {
+    print "Check read map access on readfile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/readfile", "R_OK" );
+    ok( $result eq 3 );
+    return;
+}
+
+sub test_68_4 {
+    print "Check write map access on writefile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/writefile", "W_OK" );
+    ok( $result eq 3 );
+    return;
+}
+
+# In the context mount case, this will create a new file in upperdir,
+# which will be mappable by mounter.
+sub test_68_4_ctx {
+    print "Check write map access on writefile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/writefile", "W_OK" );
+    ok( $result eq 0 );
+    return;
+}
+
+sub test_68_5 {
+    print "Check read map access on mapreadfile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/mapreadfile", "R_OK" );
+    ok( $result eq 0 );
+    return;
+}
+
+sub test_68_6 {
+    print "Check write map access on mapwritefile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/mapwritefile", "W_OK" );
+    ok( $result eq 0 );
+    return;
+}
+
+sub test_68_7 {
+    print "Check read map access on mounterfile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/mounterfile", "R_OK" );
+    ok( $result eq 2 );
+    return;
+}
+
+sub test_68_7_ctx {
+    print "Check read map access on mounterfile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/mounterfile", "R_OK" );
+    ok( $result eq 0 );
+    return;
+}
+
+sub test_68_8 {
+    print "Check write map access on mounterfile, should fail\n";
+    $result = mmap( "$basedir/container1/merged/mounterfile", "W_OK" );
+    ok( $result eq 2 );
+    return;
+}
+
+sub test_68_8_ctx {
+    print "Check write map access on mounterfile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/mounterfile", "W_OK" );
+    ok( $result eq 0 );
     return;
 }
 
@@ -794,6 +881,18 @@ sub nocontext_test {
     test_67();
 
     print "=====================================================\n";
+    print "map access tests.\n";
+    print "=====================================================\n";
+    test_68_1();
+    test_68_2();
+    test_68_3();
+    test_68_4();
+    test_68_5();
+    test_68_6();
+    test_68_7();
+    test_68_8();
+
+    print "=====================================================\n";
     print "unlink tests.\n";
     print "=====================================================\n";
     test_70();
@@ -820,7 +919,7 @@ sub nocontext_test {
 sub context_test {
 
     cleanup();
-    $context = "$seuser:object_r:test_overlay_files_rwx_t:s0:c10,c20";
+    $context = "$seuser:object_r:test_overlay_files_map_rwx_t:s0:c10,c20";
     print "\n\n=====================================================\n";
     print "Testing mounting overlayfs with context switch\n";
     print "context=$context\n";
@@ -910,6 +1009,30 @@ sub context_test {
     test_65();
     test_66();
     test_67();
+
+    print "=====================================================\n";
+    print "map access tests.\n";
+    print "=====================================================\n";
+
+    # Reset the overlay to clear any upperdir files created by previous tests.
+    # This is needed for some tests below to accurately test mounter checks.
+    cleanup();
+    if ( system("$basedir/setup-overlay $basedir '$context'") == 0 ) {
+        print "Mounted overlay with context=$context.\n";
+    }
+    else {
+        print "setup-overlay failed. Cleaning up.\n";
+        cleanup();
+        exit;
+    }
+    test_68_1();
+    test_68_2();
+    test_68_3();
+    test_68_4_ctx();
+    test_68_5();
+    test_68_6();
+    test_68_7_ctx();
+    test_68_8_ctx();
 
     print "=====================================================\n";
     print "unlink tests.\n";

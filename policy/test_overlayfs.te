@@ -21,6 +21,12 @@ files_type(test_overlay_files_ro_t)
 type test_overlay_files_rwx_t;
 files_type(test_overlay_files_rwx_t)
 
+type test_overlay_files_map_ro_t;
+files_type(test_overlay_files_map_ro_t)
+
+type test_overlay_files_map_rwx_t;
+files_type(test_overlay_files_map_rwx_t)
+
 type test_overlay_mounter_files_t;
 files_type(test_overlay_mounter_files_t)
 
@@ -60,7 +66,11 @@ allow test_overlay_mounter_t test_overlay_files_ro_t:file mounton;
 allow test_overlay_mounter_t test_overlay_files_ro_t:filesystem { mount relabelfrom relabelto };
 allow test_overlay_mounter_t test_overlay_files_rwx_t:{dir file} mounton;
 allow test_overlay_mounter_t test_overlay_files_rwx_t:filesystem { mount relabelfrom relabelto };
-can_exec(test_overlay_mounter_t, test_overlay_files_ro_t)
+allow test_overlay_mounter_t test_overlay_files_map_ro_t:file mounton;
+allow test_overlay_mounter_t test_overlay_files_map_ro_t:filesystem { mount relabelfrom relabelto };
+allow test_overlay_mounter_t test_overlay_files_map_rwx_t:{dir file} mounton;
+allow test_overlay_mounter_t test_overlay_files_map_rwx_t:filesystem { mount relabelfrom relabelto };
+can_exec(test_overlay_mounter_t, test_overlay_files_map_ro_t)
 
 #
 # Mounter should be allowed to search/read r/o directories and files
@@ -70,10 +80,14 @@ read_files_pattern(test_overlay_mounter_t, test_overlay_files_ro_t, test_overlay
 read_chr_files_pattern(test_overlay_mounter_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
 read_blk_files_pattern(test_overlay_mounter_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
 read_lnk_files_pattern(test_overlay_mounter_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
+list_dirs_pattern(test_overlay_mounter_t, test_overlay_files_map_ro_t, test_overlay_files_map_ro_t)
+read_files_pattern(test_overlay_mounter_t, test_overlay_files_map_ro_t, test_overlay_files_map_ro_t)
+allow_map(test_overlay_mounter_t, test_overlay_files_map_ro_t, file)
 allow test_overlay_mounter_t test_overlay_files_ro_t:dir mounton;
 allow test_overlay_mounter_t test_overlay_mounter_files_t:dir mounton;
-allow test_overlay_mounter_t test_overlay_files_rwx_t:filesystem unmount;
+allow test_overlay_mounter_t test_overlay_files_map_rwx_t:filesystem unmount;
 manage_files_pattern(test_overlay_mounter_t, test_overlay_mounter_files_t, test_overlay_mounter_files_t)
+allow_map(test_overlay_mounter_t, test_overlay_mounter_files_t, file)
 # Needed for transition
 manage_dirs_pattern(test_overlay_mounter_t, test_overlay_mounter_files_t, test_overlay_mounter_files_t)
 #
@@ -89,6 +103,10 @@ manage_files_pattern(test_overlay_mounter_t, test_overlay_files_rwx_t, test_over
 manage_dirs_pattern(test_overlay_mounter_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
 manage_lnk_files_pattern(test_overlay_mounter_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
 manage_sock_files_pattern(test_overlay_mounter_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
+
+manage_files_pattern(test_overlay_mounter_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+manage_dirs_pattern(test_overlay_mounter_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+allow_map(test_overlay_mounter_t, test_overlay_files_map_rwx_t, file)
 
 manage_files_pattern(test_overlay_mounter_t, test_overlay_transition_files_t, test_overlay_transition_files_t)
 
@@ -121,7 +139,11 @@ list_dirs_pattern(test_overlay_client_t, test_overlay_files_ro_t, test_overlay_f
 read_lnk_files_pattern(test_overlay_client_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
 read_chr_files_pattern(test_overlay_client_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
 read_sock_files_pattern(test_overlay_client_t, test_overlay_files_ro_t, test_overlay_files_ro_t)
-can_exec(test_overlay_client_t, test_overlay_files_ro_t)
+
+read_files_pattern(test_overlay_client_t, test_overlay_files_map_ro_t, test_overlay_files_map_ro_t)
+allow_map(test_overlay_client_t, test_overlay_files_map_ro_t, file)
+can_exec(test_overlay_client_t, test_overlay_files_map_ro_t)
+allow test_overlay_client_t test_overlay_files_map_ro_t:file entrypoint;
 
 #
 # Client should be allowed to execute/write/search/read r/w/x directories and files
@@ -131,15 +153,22 @@ manage_dirs_pattern(test_overlay_client_t, test_overlay_files_rwx_t, test_overla
 manage_lnk_files_pattern(test_overlay_client_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
 rw_chr_files_pattern(test_overlay_client_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
 manage_sock_files_pattern(test_overlay_client_t, test_overlay_files_rwx_t, test_overlay_files_rwx_t)
-can_exec(test_overlay_client_t, test_overlay_files_rwx_t)
-allow test_overlay_client_t test_overlay_files_rwx_t:file entrypoint;
+
+manage_files_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+manage_dirs_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+manage_lnk_files_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+rw_chr_files_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+manage_sock_files_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_files_map_rwx_t)
+allow_map(test_overlay_client_t, test_overlay_files_map_rwx_t, file)
+can_exec(test_overlay_client_t, test_overlay_files_map_rwx_t)
+allow test_overlay_client_t test_overlay_files_map_rwx_t:file entrypoint;
 
 #
 # Client needs to manage test_overlay_transition_files_t and transition on file named "transition"
 #
 manage_files_pattern(test_overlay_client_t, test_overlay_transition_files_t, test_overlay_transition_files_t)
 manage_dirs_pattern(test_overlay_client_t, test_overlay_transition_files_t, test_overlay_transition_files_t)
-filetrans_pattern(test_overlay_client_t, test_overlay_files_rwx_t, test_overlay_transition_files_t, file, "transition")
+filetrans_pattern(test_overlay_client_t, test_overlay_files_map_rwx_t, test_overlay_transition_files_t, file, "transition")
 
 #
 # Client needs to search test_file_t directory and execute tests
@@ -153,7 +182,9 @@ can_exec(test_overlay_client_t,test_file_t)
 #
 allow test_overlay_client_t test_overlay_files_rwx_t:file { relabelto relabelfrom };
 allow test_overlay_mounter_t test_overlay_files_rwx_t:file { relabelto relabelfrom };
-can_exec(test_overlay_mounter_t, test_overlay_files_rwx_t)
+allow test_overlay_client_t test_overlay_files_map_rwx_t:file { relabelto relabelfrom };
+allow test_overlay_mounter_t test_overlay_files_map_rwx_t:file { relabelto relabelfrom };
+can_exec(test_overlay_mounter_t, test_overlay_files_map_rwx_t)
 
 #
 # Server needs to manage socket files

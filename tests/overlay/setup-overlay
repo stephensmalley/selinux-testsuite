@@ -12,6 +12,8 @@ setup () {
     mkdir -p $BASEDIR/lower/readdir $BASEDIR/lower/writedir $BASEDIR/lower/noaccessdir $BASEDIR/lower/mounterdir
     echo read > $BASEDIR/lower/readfile
     echo write > $BASEDIR/lower/writefile
+    echo mapread > $BASEDIR/lower/mapreadfile
+    echo mapwrite > $BASEDIR/lower/mapwritefile
     echo noaccess > $BASEDIR/lower/noaccessfile
     echo client_nounlink > $BASEDIR/lower/client_nounlinkfile
     echo mounter > $BASEDIR/lower/mounterfile
@@ -35,7 +37,11 @@ setup () {
     chcon -t test_overlay_mounter_files_t $BASEDIR/lower/mounterfile $BASEDIR/lower/mounterdir $BASEDIR/lower/null_mounter
     # Label writefile on lower with a type that is writable by the client which
     # should allow copy up and write.
-    chcon -t test_overlay_files_rwx_t $BASEDIR/lower/writefile $BASEDIR/lower/writedir $BASEDIR/lower/null_write $BASEDIR/lower/transition $BASEDIR/lower/goodentrypoint
+    chcon -t test_overlay_files_rwx_t $BASEDIR/lower/writefile $BASEDIR/lower/writedir $BASEDIR/lower/null_write $BASEDIR/lower/transition
+    # Label mapreadfile and mapwritefile with the appropriate types that
+    # allow map access
+    chcon -t test_overlay_files_map_ro_t $BASEDIR/lower/mapreadfile $BASEDIR/lower/goodentrypoint
+    chcon -t test_overlay_files_map_rwx_t $BASEDIR/lower/mapwritefile
     # Create a directory per container.
     mkdir -p $BASEDIR/container1
 
@@ -48,7 +54,7 @@ setup () {
     # creation and to prevent permission problems when overlayfs
     # internally creates files on behalf of the current process.
     chcon -R -t test_overlay_mounter_files_t $BASEDIR/container1/work $BASEDIR/container1/merged
-    chcon -R -t test_overlay_files_rwx_t  $BASEDIR/container1/upper
+    chcon -R -t test_overlay_files_map_rwx_t  $BASEDIR/container1/upper
 }
 
 # Mount the overlays.
