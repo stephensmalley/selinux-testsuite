@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use Test;
-BEGIN { plan tests => 9 }
+BEGIN { plan tests => 11 }
 
 $basedir = $0;
 $basedir =~ s|(.*)/[^/]*|$1|;
@@ -98,6 +98,20 @@ ok($result);
 # Should fail on the reparent check.
 $result = system(
 "runcon -t test_norename6_t mv $basedir/src_dir/test_dir $basedir/dst_dir 2>&1"
+);
+ok($result);
+
+# Verify that test_norename7_t cannot rename the test dir.
+# Should fail on the write check to src_dir.
+$result = system(
+"runcon -t test_norename7_t mv $basedir/src_dir/test_dir $basedir/dst_dir 2>&1"
+);
+ok($result);
+
+# Verify that test_norename8_t cannot rename the test dir.
+# Should fail on the write check to dst_dir.
+$result = system(
+"runcon -t test_norename8_t mv $basedir/src_dir/test_dir $basedir/dst_dir 2>&1"
 );
 ok($result);
 
