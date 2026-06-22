@@ -17,7 +17,7 @@
 
 void usage(char *progname)
 {
-	fprintf(stderr, "usage:  %s protocol port\n", progname);
+	fprintf(stderr, "usage:  %s [-f] protocol port\n", progname);
 	exit(1);
 }
 
@@ -30,26 +30,42 @@ main(int argc, char **argv)
 	int result;
 	struct sockaddr_in sin;
 	socklen_t sinlen;
-	int type, protocol;
+	int type, protocol, opt;
 	unsigned short port;
+	bool tcpfastopen = false;
 
-	if (argc != 3)
+	while ((opt = getopt(argc, argv, "f")) != -1) {
+		switch (opt) {
+		case 'f':
+			tcpfastopen = true;
+			break;
+		default:
+			usage(argv[0]);
+		}
+	}
+
+	if ((argc - optind + 1) != 3)
 		usage(argv[0]);
 
-	if (!strcmp(argv[1], "tcp")) {
+	if (!strcmp(argv[optind], "tcp")) {
 		type = SOCK_STREAM;
 		protocol = IPPROTO_TCP;
-	} else if (!strcmp(argv[1], "mptcp")) {
+	} else if (!strcmp(argv[optind], "mptcp")) {
 		type = SOCK_STREAM;
 		protocol = IPPROTO_MPTCP;
-	} else if (!strcmp(argv[1], "udp")) {
+	} else if (!strcmp(argv[optind], "udp")) {
 		type = SOCK_DGRAM;
 		protocol = IPPROTO_UDP;
 	} else {
 		usage(argv[0]);
 	}
 
-	port = atoi(argv[2]);
+	if (protocol == IPPROTO_UDP && tcpfastopen) {
+		fprintf(stderr, "TCP Fast Open only works with TCP or MPTCP\n");
+		exit(1);
+	}
+
+	port = atoi(argv[optind + 1]);
 	if (!port)
 		usage(argv[0]);
 
@@ -95,13 +111,26 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	result = connect(csock, (struct sockaddr *) &sin, sinlen);
-	if (result < 0) {
-		perror("connect");
-		close(ssock);
-		close(csock);
-		exit(1);
+	if (tcpfastopen) {
+		char byte = 0;
+		result = sendto(csock, &byte, 1, MSG_FASTOPEN,
+				(struct sockaddr *) &sin, sinlen);
+		if (result < 0) {
+			perror("sendto");
+			close(ssock);
+			close(csock);
+			exit(1);
+		}
+	} else {
+		result = connect(csock, (struct sockaddr *) &sin, sinlen);
+		if (result < 0) {
+			perror("connect");
+			close(ssock);
+			close(csock);
+			exit(1);
+		}
 	}
+
 	close(ssock);
 	close(csock);
 	exit(0);

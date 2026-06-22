@@ -12,7 +12,7 @@ BEGIN {
         $is_stream   = 1;
         $fail_value1 = 5;
         $fail_value2 = 5;
-        $test_count  = 19;
+        $test_count  = 21;
     }
     elsif ( $proto eq "udp" ) {
         $is_stream   = 0;
@@ -307,6 +307,17 @@ if ($is_stream) {
     $result =
       system
 "runcon -t test_inet_no_name_connect_t -- $basedir/connect $proto 65535 2>&1";
+    ok($result);
+
+    # Verify that authorized domain can connect to TCP socket via TCP Fast Open.
+    $result = system
+      "runcon -t test_inet_connect_t -- $basedir/connect -f $proto 65535 2>&1";
+    ok( $result eq 0 );
+
+# Verify that domain without name_connect cannot connect to TCP socket via TCP Fast Open.
+    $result =
+      system
+"runcon -t test_inet_no_name_connect_t -- $basedir/connect -f $proto 65535 2>&1";
     ok($result);
 }
 
