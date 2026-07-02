@@ -19,7 +19,7 @@ BEGIN {
         plan skip_all => "overlayfs upperdir not supported on NFS";
     }
     else {
-        plan tests => 135;
+        plan tests => 137;
     }
 }
 
@@ -641,6 +641,13 @@ sub test_68_8_ctx {
     return;
 }
 
+sub test_68_9 {
+    print "Check execmem map access on mapreadfile, should succeed\n";
+    $result = mmap( "$basedir/container1/merged/mapreadfile", "EXECMEM" );
+    ok( $result eq 0 );
+    return;
+}
+
 sub test_70 {
     print "Check unlink access on client_nounlinkfile, should fail.\n";
     $result = system(
@@ -891,6 +898,7 @@ sub nocontext_test {
     test_68_6();
     test_68_7();
     test_68_8();
+    test_68_9();
 
     print "=====================================================\n";
     print "unlink tests.\n";
@@ -1033,6 +1041,7 @@ sub context_test {
     test_68_6();
     test_68_7_ctx();
     test_68_8_ctx();
+    test_68_9();
 
     print "=====================================================\n";
     print "unlink tests.\n";

@@ -122,6 +122,10 @@ can_exec(test_overlay_mounter_t, test_file_t)
 allow test_overlay_client_t self:dir list_dir_perms;
 allow test_overlay_client_t self:file read_file_perms;
 
+# For testing execmem checking (should be checked only on the client,
+# never on the mounter)
+allow test_overlay_client_t self:process execmem;
+
 mcs_constrained(test_overlay_client_t)
 
 kernel_read_system_state(test_overlay_client_t)
