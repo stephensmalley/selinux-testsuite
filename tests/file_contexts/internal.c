@@ -13,7 +13,9 @@
 void assertContextsMatch(struct selabel_handle *hnd, const char *log_prefix,
 			 struct test_t *tests, size_t n)
 {
-	for (int i = 0; i < n; i++) {
+	int i;
+
+	for (i = 0; i < n; i++) {
 		char *context = NULL;
 		struct test_t test = tests[i];
 
