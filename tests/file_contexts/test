@@ -3,23 +3,38 @@
 # This test validates the parsing of file_contexts.
 #
 
-use Test;
+use Test::More;
 
-BEGIN { plan tests => 4; }
+BEGIN {
+    $basedir = $0;
+    $basedir =~ s|(.*)/[^/]*|$1|;
 
-$basedir = $0;
-$basedir =~ s|(.*)/[^/]*|$1|;
+    $test_multiple = 0;
+    $result        = system "$basedir/test_multiple $basedir check 2>/dev/null";
+    if ( $result eq 0 ) {
+        $test_multiple = 1;
+        plan tests => 5;
+    }
+    else {
+        plan tests => 4;
+    }
+}
 
 $result = system "$basedir/test_open $basedir 2>&1";
-ok( $result, 0 );
+ok( $result eq 0 );
 
 $result = system "$basedir/test_lookup $basedir 2>&1";
-ok( $result, 0 );
+ok( $result eq 0 );
 
 $result = system "$basedir/test_open_base $basedir 2>&1";
-ok( $result, 0 );
+ok( $result eq 0 );
 
 $result = system "$basedir/test_validate $basedir 2>&1";
-ok( $result, 0 );
+ok( $result eq 0 );
+
+if ($test_multiple) {
+    $result = system "$basedir/test_multiple $basedir 2>&1";
+    ok( $result eq 0 );
+}
 
 exit;

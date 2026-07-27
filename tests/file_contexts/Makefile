@@ -1,4 +1,4 @@
-TARGETS=test_open test_lookup test_open_base test_validate
+TARGETS=test_open test_lookup test_open_base test_validate test_multiple
 CFLAGS += -O2 -Werror -Wall
 LDLIBS += -lselinux
 
