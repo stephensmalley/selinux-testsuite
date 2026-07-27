@@ -48,7 +48,7 @@
         echo "(policycap netlink_xperm)" >>base.cil
         echo "(policycap bpf_token_perms)" >>base.cil
         # allow nlmsg to some system domains so that the system can boot
-        for source in daemon initrc_domain systemprocess unconfined_domain_type sysadm_t; do
+        for source in daemon initrc_domain systemprocess ssh_server unconfined_domain_type sysadm_t; do
           echo "(allow $source self (netlink_route_socket (nlmsg)))" >>base.cil
           echo "(allow $source self (netlink_tcpdiag_socket (nlmsg)))" >>base.cil
           echo "(allow $source self (netlink_xfrm_socket (nlmsg)))" >>base.cil
