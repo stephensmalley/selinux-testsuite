@@ -22,26 +22,40 @@ void test_default_options(const char *basedir)
 
 	char *path;
 	asprintf(&path, "%s/f3.fc", basedir);
-	struct selinux_opt f3_opts[] = {
-		{ .type = SELABEL_OPT_PATH, .value = path }
+	struct selinux_opt f3_opts[] = { {
+			.type = SELABEL_OPT_PATH,
+			.value = path
+		}
 	};
 
 	hnd = selabel_open(SELABEL_CTX_FILE, f3_opts, ARRAY_SIZE(f3_opts));
 	free(path);
 
 	if (!hnd) {
-		perror("file_context:f3_default_options");
+		log_errno("Unable to open file backend");
 		exit(2);
 	}
 
 	struct test_t tests[] = {
 		{ .path = "/", .context = "system_u:object_r:rootfs:s0" },
-		{ .path = "/local", .context = "system_u:object_r:test_local:s0" },
-		{ .path = "/homedirs", .context = "system_u:object_r:test_homedirs:s0" },
-		{ .path = "/sub", .context = "system_u:object_r:test_subbed:s0" },
-		{ .path = "/sub_dist", .context = "system_u:object_r:test_subbed:s0" },
+		{
+			.path = "/local",
+			.context = "system_u:object_r:test_local:s0"
+		},
+		{
+			.path = "/homedirs",
+			.context = "system_u:object_r:test_homedirs:s0"
+		},
+		{
+			.path = "/sub",
+			.context = "system_u:object_r:test_subbed:s0"
+		},
+		{
+			.path = "/sub_dist",
+			.context = "system_u:object_r:test_subbed:s0"
+		},
 	};
-	assertContextsMatch(hnd, tests, ARRAY_SIZE(tests));
+	assertContextsMatch(hnd, __func__, tests, ARRAY_SIZE(tests));
 
 	selabel_close(hnd);
 }
@@ -62,7 +76,7 @@ void test_base_only_option(const char *basedir)
 	free(path);
 
 	if (!hnd) {
-		perror("file_context:f3_base_only_options");
+		log_errno("Unable to open file backend");
 		exit(2);
 	}
 
@@ -70,10 +84,16 @@ void test_base_only_option(const char *basedir)
 		{ .path = "/", .context = "system_u:object_r:rootfs:s0" },
 		{ .path = "/local", .context = NULL },
 		{ .path = "/homedirs", .context = NULL },
-		{ .path = "/sub", .context = "system_u:object_r:test_subbed:s0" },
-		{ .path = "/sub_dist", .context = "system_u:object_r:test_subbed:s0" },
+		{
+			.path = "/sub",
+			.context = "system_u:object_r:test_subbed:s0"
+		},
+		{
+			.path = "/sub_dist",
+			.context = "system_u:object_r:test_subbed:s0"
+		},
 	};
-	assertContextsMatch(hnd, tests, ARRAY_SIZE(tests));
+	assertContextsMatch(hnd, __func__, tests, ARRAY_SIZE(tests));
 
 	selabel_close(hnd);
 }
@@ -81,7 +101,7 @@ void test_base_only_option(const char *basedir)
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
-		fprintf(stderr, "basedir not provided\n");
+		log_err("basedir not provided");
 		exit(1);
 	}
 
