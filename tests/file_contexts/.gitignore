@@ -3,3 +3,4 @@ test_lookup
 test_open
 test_open_base
 test_validate
+test_multiple
