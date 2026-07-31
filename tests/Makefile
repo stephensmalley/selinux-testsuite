@@ -21,6 +21,15 @@ POL_TYPE := $(shell ./pol_detect $(SELINUXFS))
 # Filter out unavailable filesystems
 FILESYSTEMS := $(foreach fs,$(FILESYSTEMS),$(shell modprobe $(fs) > /dev/null 2>&1 && echo $(fs)))
 
+# Filter out f2fs if PAGE_SIZE != 4096.
+# Latest released f2fs-tools (1.16.0) can't produce a filesystem that is
+# mountable on a large page kernel. Latest master branch can do it with
+# `mkfs.f2fs -b $(getconf PAGESIZE) ...` and device size >= 1GiB (in case
+# of 64K page size), but that's not packaged in Fedora currently.
+ifneq ($(shell getconf PAGESIZE),4096)
+FILESYSTEMS := $(filter-out f2fs,$(FILESYSTEMS))
+endif
+
 SUBDIRS:= domain_trans entrypoint execshare exectrace execute_no_trans \
 	fdreceive inherit link mkdir msg open ptrace readlink relabel rename \
 	rxdir sem setattr setnice shm sigkill stat sysctl task_create \
