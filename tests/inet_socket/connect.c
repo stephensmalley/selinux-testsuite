@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
