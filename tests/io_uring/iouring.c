@@ -68,6 +68,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -475,6 +476,7 @@ int main(int argc, char *argv[])
 	struct urt_config *cfg_p;
 	char *progname;
 	char *progdir;
+	struct rlimit rlim;
 
 	enum { TST_UNKNOWN,
 	       TST_SQPOLL,
@@ -499,6 +501,19 @@ int main(int argc, char *argv[])
 
 	progname = strdup(argv[0]);
 	progdir = dirname(progname);
+
+	/*
+	 * bump RLIMIT_MEMLOCK up to hard limit (some operations may need it,
+	 * especially if PAGE_SIZE is big)
+	 */
+	if (getrlimit(RLIMIT_MEMLOCK, &rlim))
+		fatal("getrlimit");
+
+	if (rlim.rlim_cur < rlim.rlim_max) {
+		rlim.rlim_cur = rlim.rlim_max;
+		if (setrlimit(RLIMIT_MEMLOCK, &rlim))
+			fatal("setrlimit");
+	}
 
 	snprintf(uring_path, sizeof(uring_path), "%s/iouring.out", progdir);
 
