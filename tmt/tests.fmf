@@ -3,6 +3,7 @@
 /prepare-system:
   summary: Prepare the system for testing
   order: 1
+  duration: 10m
   require: policycoreutils-python-utils
   test: |
     set -ex
