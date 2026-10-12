@@ -55,6 +55,9 @@ export NFS_TESTDIR=$TESTDIR
 export NFS_MOUNT=$MOUNT
 #
 systemctl start nfs-server
+# Work around https://bugzilla.redhat.com/show_bug.cgi?id=2547879
+# Remove this line once the bug is fixed.
+sleep 5; systemctl start nfs-mountd
 # Run the testsuite on a labeled NFS mount.
 exportfs -o rw,no_root_squash,security_label localhost:$MOUNT
 mkdir -p /mnt/selinux-testsuite
