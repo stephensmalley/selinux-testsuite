@@ -95,13 +95,14 @@ static void request_service_provider_fd(int fd,
 		break;
 #endif
 	default:
-		fprintf(stderr, "Invalid fd_type: %d\n", fd_type);
+		fprintf(stderr, "Invalid fd_type: %d\n", (int)fd_type);
 		exit(73);
 	}
 
 	if (verbose)
-		printf("Service Provider handle: %d and %s FD: %d\n",
-		       txn->target.handle, fd_type_str, obj.fd);
+		printf("Service Provider handle: %lu and %s FD: %lu\n",
+		       (long unsigned)txn->target.handle, fd_type_str,
+		       (long unsigned)obj.fd);
 
 	txn->data_size = sizeof(obj);
 	txn->data.ptr.buffer = (binder_uintptr_t)&obj;
@@ -219,8 +220,8 @@ static int binder_parse(int fd, binder_uintptr_t ptr, binder_size_t size)
 			break;
 		default:
 			if (verbose)
-				printf("Service Provider parsed unknown command: %d\n",
-				       cmd);
+				printf("Service Provider parsed unknown command: %lu\n",
+				       (long unsigned)cmd);
 			exit(81);
 		}
 	}
@@ -307,8 +308,8 @@ int main(int argc, char **argv)
 	pid = getpid();
 
 	if (verbose) {
-		printf("Service Provider PID: %d Process context:\n\t%s\n",
-		       pid, context);
+		printf("Service Provider PID: %ld Process context:\n\t%s\n",
+		       (long)pid, context);
 	}
 	free(context);
 
@@ -383,8 +384,8 @@ int main(int argc, char **argv)
 	}
 
 	if (verbose)
-		printf("Service Provider read_consumed: %lld\n",
-		       bwr.read_consumed);
+		printf("Service Provider read_consumed: %llu\n",
+		       (long long unsigned)bwr.read_consumed);
 
 	cmd = binder_parse(fd, (binder_uintptr_t)readbuf,
 			   bwr.read_consumed);
@@ -454,8 +455,8 @@ int main(int argc, char **argv)
 			continue;
 
 		if (verbose)
-			printf("Service Provider read_consumed: %lld\n",
-			       bwr.read_consumed);
+			printf("Service Provider read_consumed: %llu\n",
+			       (long long unsigned)bwr.read_consumed);
 
 		cmd = binder_parse(fd, (binder_uintptr_t)readbuf, bwr.read_consumed);
 

@@ -56,8 +56,8 @@ static void extract_fd_and_respond(const struct binder_transaction_data *txn_in)
 	      (((char *)(binder_uintptr_t)txn_in->data.ptr.buffer) + *offs);
 
 	if (obj->hdr.type != BINDER_TYPE_FD) {
-		fprintf(stderr, "Header not BINDER_TYPE_FD: %d\n",
-			obj->hdr.type);
+		fprintf(stderr, "Header not BINDER_TYPE_FD: %lu\n",
+			(long unsigned)obj->hdr.type);
 		exit(130);
 	}
 
@@ -69,8 +69,9 @@ static void extract_fd_and_respond(const struct binder_transaction_data *txn_in)
 	}
 
 	if (verbose)
-		printf("Client retrieved %s fd: %d st_dev: %ld\n",
-		       fd_type_str, obj->fd, sb.st_dev);
+		printf("Client retrieved %s fd: %lu st_dev: %llu\n",
+		       fd_type_str, (long unsigned)obj->fd,
+		       (long long unsigned)sb.st_dev);
 
 	/* If testing BPF, then cannot do impersonate check */
 	if (fd_type > BINDER_FD)
@@ -110,8 +111,8 @@ static void extract_fd_and_respond(const struct binder_transaction_data *txn_in)
 	}
 
 	if (verbose)
-		printf("Client read_consumed: %lld\n",
-		       bwr.read_consumed);
+		printf("Client read_consumed: %llu\n",
+		       (long long unsigned)bwr.read_consumed);
 
 	cmd = binder_parse(obj->fd, (binder_uintptr_t)readbuf,
 			   bwr.read_consumed);
@@ -125,8 +126,8 @@ static void extract_fd_and_respond(const struct binder_transaction_data *txn_in)
 	}
 
 	if (verbose)
-		printf("Client sent transaction using Service Providers FD: %d\n",
-		       obj->fd);
+		printf("Client sent transaction using Service Providers FD: %lu\n",
+		       (long unsigned)obj->fd);
 }
 
 static void request_service_provider_fd(int fd, uint32_t handle)
@@ -163,8 +164,8 @@ static void request_service_provider_fd(int fd, uint32_t handle)
 	bwr.read_buffer = (binder_uintptr_t)readbuf;
 
 	if (verbose)
-		printf("Client sending transaction SEND_CLIENT_YOUR_BINDER_FD to handle: %d\n",
-		       handle);
+		printf("Client sending transaction SEND_CLIENT_YOUR_BINDER_FD to handle: %lu\n",
+		       (long unsigned)handle);
 
 	result = ioctl(fd, BINDER_WRITE_READ, &bwr);
 	if (result < 0) {
@@ -198,8 +199,8 @@ static void extract_handle_and_acquire(int fd,
 	      (((char *)(binder_uintptr_t)txn_in->data.ptr.buffer) + *offs);
 
 	if (obj->hdr.type != BINDER_TYPE_HANDLE) {
-		fprintf(stderr, "Client - Header not BINDER_TYPE_HANDLE: %d\n",
-			obj->hdr.type);
+		fprintf(stderr, "Client - Header not BINDER_TYPE_HANDLE: %lu\n",
+			(long unsigned)obj->hdr.type);
 		exit(150);
 	}
 
@@ -219,8 +220,8 @@ static void extract_handle_and_acquire(int fd,
 	}
 
 	if (verbose)
-		printf("Client acquired binder handle: %d for Service Provider\n",
-		       obj->handle);
+		printf("Client acquired binder handle: %lu for Service Provider\n",
+		       (long unsigned)obj->handle);
 
 	/* Now get their fd */
 	request_service_provider_fd(fd, obj->handle);
@@ -291,8 +292,8 @@ static int binder_parse(int fd, binder_uintptr_t ptr, binder_size_t size)
 			break;
 		default:
 			if (verbose)
-				printf("Client parsed unknown command: %d\n",
-				       cmd);
+				printf("Client parsed unknown command: %lu\n",
+				       (long unsigned)cmd);
 			exit(160);
 		}
 	}
@@ -358,8 +359,8 @@ int main(int argc, char **argv)
 	pid = getpid();
 
 	if (verbose) {
-		printf("Client PID: %d Process context:\n\t%s\n",
-		       pid, context);
+		printf("Client PID: %ld Process context:\n\t%s\n",
+		       (long)pid, context);
 	}
 	free(context);
 
@@ -434,8 +435,8 @@ int main(int argc, char **argv)
 		ioctl_wr++;
 
 		if (verbose)
-			printf("Client read_consumed: %lld\n",
-			       bwr.read_consumed);
+			printf("Client read_consumed: %llu\n",
+			       (long long unsigned)bwr.read_consumed);
 
 		cmd = binder_parse(fd, (binder_uintptr_t)readbuf,
 				   bwr.read_consumed);

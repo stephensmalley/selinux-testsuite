@@ -45,8 +45,8 @@ static void do_service_manager(int fd, struct binder_transaction_data *txn_in)
 			sp_handle = obj->handle;
 
 			if (verbose)
-				printf("Manager has TEST_SERVICE_ADD obj->handle: %d\n",
-				       sp_handle);
+				printf("Manager has TEST_SERVICE_ADD obj->handle: %lu\n",
+				       (long unsigned)sp_handle);
 		} else {
 			fprintf(stderr, "Manager failed to obtain a handle\n");
 			exit(20);
@@ -68,8 +68,8 @@ static void do_service_manager(int fd, struct binder_transaction_data *txn_in)
 		}
 
 		if (verbose)
-			printf("Manager acquired binder handle: %d for Service Provider\n",
-			       sp_handle);
+			printf("Manager acquired binder handle: %lu for Service Provider\n",
+			       (long unsigned)sp_handle);
 
 		/* Inform the Service Provider of outcome. */
 		reply.cmd_reply = BC_REPLY;
@@ -85,20 +85,21 @@ static void do_service_manager(int fd, struct binder_transaction_data *txn_in)
 		break;
 	case TEST_SERVICE_GET:
 		if (verbose)
-			printf("Manager has TEST_SERVICE_GET handle: %d\n",
-			       sp_handle);
+			printf("Manager has TEST_SERVICE_GET handle: %lu\n",
+			       (long unsigned)sp_handle);
 
 		reply_with_handle(fd, txn_in);
 
 		break;
 	case TEST_SERVICE_SEND_FD:
 		if (verbose)
-			printf("Manager Rx'ed SEND_CLIENT_YOUR_BINDER_FD for handle: %d\n",
-			       txn_in->target.handle);
+			printf("Manager Rx'ed SEND_CLIENT_YOUR_BINDER_FD for handle: %lu\n",
+			       (long unsigned)txn_in->target.handle);
 		break;
 	default:
-		fprintf(stderr, "Manager unknown txn->code: %d for handle: %d\n",
-			txn_in->code, txn_in->target.handle);
+		fprintf(stderr, "Manager unknown txn->code: %lu for handle: %lu\n",
+			(long unsigned)txn_in->code,
+			(long unsigned)txn_in->target.handle);
 		exit(22);
 	}
 }
@@ -148,8 +149,8 @@ static void reply_with_handle(int fd, struct binder_transaction_data *txn_in)
 	}
 
 	if (verbose)
-		printf("Manager sent Service Provider handle: %d to Client\n",
-		       sp_handle);
+		printf("Manager sent Service Provider handle: %lu to Client\n",
+		       (long unsigned)sp_handle);
 }
 
 /* Parse response, reply as required and then return last CMD */
@@ -210,8 +211,8 @@ static int binder_parse(int fd, binder_uintptr_t ptr, binder_size_t size)
 			break;
 		default:
 			if (verbose)
-				printf("Manager parsed unknown command: %d\n",
-				       cmd);
+				printf("Manager parsed unknown command: %lu\n",
+				       (long unsigned)cmd);
 			exit(40);
 		}
 	}
@@ -258,8 +259,8 @@ int main(int argc, char **argv)
 	pid = getpid();
 
 	if (verbose) {
-		printf("Manager PID: %d Process context:\n\t%s\n",
-		       pid, context);
+		printf("Manager PID: %ld Process context:\n\t%s\n",
+		       (long)pid, context);
 	}
 	free(context);
 
@@ -348,8 +349,8 @@ int main(int argc, char **argv)
 			continue;
 
 		if (verbose)
-			printf("Manager read_consumed: %lld\n",
-			       bwr.read_consumed);
+			printf("Manager read_consumed: %llu\n",
+			       (long long unsigned)bwr.read_consumed);
 
 		binder_parse(fd, (binder_uintptr_t)readbuf, bwr.read_consumed);
 	}

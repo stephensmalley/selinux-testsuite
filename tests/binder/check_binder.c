@@ -41,15 +41,15 @@ int main(int argc, char **argv)
 
 	if (vers.protocol_version != BINDER_CURRENT_PROTOCOL_VERSION) {
 		fprintf(stderr,
-			"Binder kernel version: %d differs from user space version: %d\n",
-			vers.protocol_version,
-			BINDER_CURRENT_PROTOCOL_VERSION);
+			"Binder kernel version: %ld differs from user space version: %ld\n",
+			(long)vers.protocol_version,
+			(long)BINDER_CURRENT_PROTOCOL_VERSION);
 		result = BINDER_VER_ERROR;
 		goto brexit;
 	}
 
 	if (verbose)
-		printf("Binder kernel version: %d\n", vers.protocol_version);
+		printf("Binder kernel version: %ld\n", (long)vers.protocol_version);
 
 	result = BASE_BINDER_SUPPORT;
 

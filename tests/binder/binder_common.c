@@ -64,8 +64,8 @@ void print_trans_data(const struct binder_transaction_data *txn_in)
 			      (binder_uintptr_t)txn_in->data.ptr.offsets;
 	size_t count = txn_in->offsets_size / sizeof(binder_size_t);
 
-	printf("\thandle: %d\n", (uint32_t)txn_in->target.handle);
-	printf("\tcookie: %lld\n", txn_in->cookie);
+	printf("\thandle: %lu\n", (long unsigned)txn_in->target.handle);
+	printf("\tcookie: %llu\n", (long long unsigned)txn_in->cookie);
 	switch (txn_in->code) {
 	case TEST_SERVICE_ADD:
 		printf("\tcode: TEST_SERVICE_ADD\n");
@@ -77,8 +77,8 @@ void print_trans_data(const struct binder_transaction_data *txn_in)
 		printf("\tcode: TEST_SERVICE_SEND_FD\n");
 		break;
 	default:
-		printf("Unknown binder_transaction_data->code: %x\n",
-		       txn_in->code);
+		printf("Unknown binder_transaction_data->code: %lx\n",
+		       (long unsigned)txn_in->code);
 		return;
 	}
 
@@ -96,13 +96,13 @@ void print_trans_data(const struct binder_transaction_data *txn_in)
 		printf("\tflag: TF_ACCEPT_FDS\n");
 		break;
 	default:
-		printf("Unknown flag: %x\n", txn_in->flags);
+		printf("Unknown flag: %lx\n", (long unsigned)txn_in->flags);
 		return;
 	}
-	printf("\tsender pid: %u\n", txn_in->sender_pid);
-	printf("\tsender euid: %u\n", txn_in->sender_euid);
-	printf("\tdata_size: %llu\n", txn_in->data_size);
-	printf("\toffsets_size: %llu\n", txn_in->offsets_size);
+	printf("\tsender pid: %ld\n", (long)txn_in->sender_pid);
+	printf("\tsender euid: %lu\n", (long unsigned)txn_in->sender_euid);
+	printf("\tdata_size: %llu\n", (long long unsigned)txn_in->data_size);
+	printf("\toffsets_size: %llu\n", (long long unsigned)txn_in->offsets_size);
 
 	while (count--) {
 		obj = (const struct flat_binder_object *)
@@ -111,31 +111,31 @@ void print_trans_data(const struct binder_transaction_data *txn_in)
 		switch (obj->hdr.type) {
 		case BINDER_TYPE_BINDER:
 			printf("\thdr: BINDER_TYPE_BINDER\n");
-			printf("\tbinder: %llx\n", obj->binder);
+			printf("\tbinder: %llx\n", (long long unsigned)obj->binder);
 			break;
 		case BINDER_TYPE_HANDLE:
 			printf("\thdr: BINDER_TYPE_HANDLE\n");
-			printf("\thandle: %x\n", obj->handle);
+			printf("\thandle: %lx\n", (long unsigned)obj->handle);
 			break;
 		case BINDER_TYPE_FD:
 			printf("\thdr: BINDER_TYPE_FD\n");
-			printf("\tfd: %x\n", obj->handle);
+			printf("\tfd: %lx\n", (long unsigned)obj->handle);
 			break;
 		default:
-			printf("Unknown header: %u\n", obj->hdr.type);
+			printf("Unknown header: %lu\n", (long unsigned)obj->hdr.type);
 			return;
 		}
 #if HAVE_BINDERFS
-		printf("\tflags: priority: 0x%x accept FDS: %s request security CTX: %s\n",
-		       obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
+		printf("\tflags: priority: 0x%lx accept FDS: %s request security CTX: %s\n",
+		       (long unsigned)obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
 		       obj->flags & FLAT_BINDER_FLAG_ACCEPTS_FDS ? "YES" : "NO",
 		       obj->flags & FLAT_BINDER_FLAG_TXN_SECURITY_CTX ? "YES" : "NO");
 #else
-		printf("\tflags: priority: 0x%x accept FDS: %s\n",
-		       obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
+		printf("\tflags: priority: 0x%lx accept FDS: %s\n",
+		       (long unsigned)obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
 		       obj->flags & FLAT_BINDER_FLAG_ACCEPTS_FDS ? "YES" : "NO");
 #endif
-		printf("\tcookie: %llx\n", obj->cookie);
+		printf("\tcookie: %llx\n", (long long unsigned)obj->cookie);
 	}
 	fflush(stdout);
 }
