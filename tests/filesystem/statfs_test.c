@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
 	if (verbose)
 		printf("statfs(2) returned magic filesystem: 0x%lx\n",
-		       statfs_t.f_type);
+		       (long unsigned)statfs_t.f_type);
 
 	return 0;
 }
