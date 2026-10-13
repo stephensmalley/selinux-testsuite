@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 		if (verbose) {
 			pe_page = base;
 			printf("perf mmap(2) return value: %lld\n",
-			       pe_page->offset);
+			       (long long)pe_page->offset);
 		}
 
 		munmap(base, mmap_size);
