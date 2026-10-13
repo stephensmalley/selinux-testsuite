@@ -28,6 +28,10 @@
       unconfined_t|'')
         ;;
       sysadm_t)
+        # Workaround for missing https://github.com/fedora-selinux/selinux-policy/pull/3465
+        echo '(allow sysadm_t self (netlink_iscsi_socket (create)))' >/tmp/sysadm_workaround.cil
+        semodule -i /tmp/sysadm_workaround.cil
+        rm -f /tmp/sysadm_workaround.cil
         ;;
       *)
         echo "Invalid STS_ROOT_DOMAIN value!"
@@ -189,6 +193,9 @@
     set -ex
 
     make -C ../policy unload || true
+    if [ "$STS_ROOT_DOMAIN" = sysadm_t ]; then
+      semodule -r sysadm_workaround || true
+    fi
     if [ "$STS_KERNEL" = secnext ]; then
       semodule -X 456 -r base
       env -C /usr/share/selinux/devel/include/support mv all_perms.spt.orig all_perms.spt
