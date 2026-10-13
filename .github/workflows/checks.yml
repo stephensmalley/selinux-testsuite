@@ -11,6 +11,19 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo chown $(id -u):$(id -g) .
       - run: tools/check-syntax -f && git diff --exit-code
+  compile-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Schedule compile-test on Testing Farm
+        uses: sclorg/testing-farm-as-github-action@main
+        with:
+          api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
+          arch: x86_64
+          compose: Fedora-latest
+          tmt_plan_filter: tag:compile
+          tmt_hardware: '{ "cpu": { "cores": ">=16" } }'
+          # no need for the "guest setup" - it just takes a lot of time for no benefit
+          environment_settings: '{ "pipeline": { "skip_guest_setup": true } }'
   run:
     runs-on: ubuntu-latest
     strategy:

@@ -2,7 +2,7 @@
   summary: Run the testsuite
   discover:
     how: fmf
-    filter: tag:-ci
+    filter: tag:-ci & tag:-compile
   execute:
     how: tmt
 /run-ci:
@@ -10,5 +10,14 @@
   tag: [ci]
   discover:
     how: fmf
+    filter: tag:-compile
+  execute:
+    how: tmt
+/compile-test:
+  summary: Test compilation on various architectures
+  tag: [compile]
+  discover:
+    how: fmf
+    filter: tag:compile
   execute:
     how: tmt

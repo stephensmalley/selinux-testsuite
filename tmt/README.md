@@ -4,7 +4,7 @@ This directory contains basic "test plans" for running the selinux-testsuite via
 
 ```bash
 tmt run [-e STS_ROOT_DOMAIN=...] [-e STS_KERNEL=...] \
-    plans -f 'tag:-ci' --all provision -h ...
+    plans -f 'tag:-ci & tag:-compile' --all provision -h ...
 ```
 
 See `tmt run provision --help` for information about possible provisioning methods (most useful are `local`, `connect`, or `virtual.testcloud`).

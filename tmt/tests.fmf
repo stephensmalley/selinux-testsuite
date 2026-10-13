@@ -200,3 +200,57 @@
       semodule -X 456 -r base
       env -C /usr/share/selinux/devel/include/support mv all_perms.spt.orig all_perms.spt
     fi
+/compile-test:
+  summary: Run a compile test
+  tag: [compile]
+  duration: 30m
+  require: mock
+  test: |
+    set -x
+
+    arch="$BUILD_ARCH"
+
+    mock -r "fedora-rawhide-$arch" --forcearch "$arch" --init || exit 2
+    mock -r "fedora-rawhide-$arch" --forcearch "$arch" --install \
+      make \
+      perl-Test \
+      perl-Test-Harness \
+      perl-Test-Simple \
+      perl-lib \
+      selinux-policy-devel \
+      gcc \
+      libselinux-devel \
+      net-tools \
+      netlabel_tools \
+      iptables \
+      nftables \
+      lksctp-tools-devel \
+      attr \
+      libbpf-devel \
+      keyutils-libs-devel \
+      quota \
+      xfsprogs-devel \
+      libuuid-devel \
+      e2fsprogs \
+      f2fs-tools \
+      jfsutils \
+      dosfstools \
+      btrfs-progs \
+      rdma-core-devel \
+      kexec-tools \
+      liburing-devel \
+      || exit 2
+    cp -a .. "$(mock -r "fedora-rawhide-$arch" --forcearch "$arch" --print-root-path)"/root/selinux-testsuite || exit 2
+    mock -r "fedora-rawhide-$arch" --forcearch "$arch" --chroot 'make -j"$(nproc)" -C /root/selinux-testsuite all || exit 1'
+  /x86_64:
+    environment:
+      BUILD_ARCH: x86_64
+  /aarch64:
+    environment:
+      BUILD_ARCH: aarch64
+  /ppc64le:
+    environment:
+      BUILD_ARCH: ppc64le
+  /s390x:
+    environment:
+      BUILD_ARCH: s390x
