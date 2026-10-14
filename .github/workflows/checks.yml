@@ -28,3 +28,5 @@ jobs:
           compose: Fedora-${{ matrix.kernel == 'secnext' && 'Rawhide' || 'latest' }}
           variables: STS_ROOT_DOMAIN=${{ matrix.domain }}; STS_KERNEL=${{ matrix.kernel }}
           tmt_plan_filter: tag:ci
+          # no need for the "guest setup" - it just takes a lot of time for no benefit
+          environment_settings: '{ "pipeline": { "skip_guest_setup": true } }'
