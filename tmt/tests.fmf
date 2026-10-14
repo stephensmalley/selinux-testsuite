@@ -4,21 +4,30 @@
   summary: Prepare the system for testing
   order: 1
   duration: 10m
-  require: policycoreutils-python-utils
+  require:
+    - policycoreutils-python-utils
+    - openssh-server
+    - openssh-clients
   test: |
     set -ex
 
     if [ "$TMT_REBOOT_COUNT" -eq 0 ]; then
       reboot=0
 
+      # Enable root to log in via SSH as itself (so we can potentially test
+      # sysadm confined root)
+      systemctl start sshd
+      if ! [ -e ~/.ssh/id_rsa.pub ]; then
+        echo | ssh-keygen -t rsa -q -N ''
+      fi
+      if ! grep -qF "$(cat ~/.ssh/id_rsa.pub)" ~/.ssh/authorized_keys; then
+        echo "$(cat ~/.ssh/id_rsa.pub)" >>~/.ssh/authorized_keys
+      fi
+
       case "$STS_ROOT_DOMAIN" in
       unconfined_t|'')
         ;;
       sysadm_t)
-        semanage boolean --modify --on ssh_sysadm_login
-        semanage login --modify -s sysadm_u root
-
-        reboot=1
         ;;
       *)
         echo "Invalid STS_ROOT_DOMAIN value!"
@@ -129,16 +138,32 @@
     - rdma-core-devel
     - kexec-tools
     - liburing-devel
+  test: |
+    set -ex
+
+    if [ "$STS_ROOT_DOMAIN" = sysadm_t ]; then
+      semanage boolean --modify --on ssh_sysadm_login
+      semanage login --modify -s sysadm_u root
+      trap '
+        semanage boolean --modify --off ssh_sysadm_login
+        semanage login --modify -s unconfined_u root
+      ' EXIT
+    fi
+
+    # Force a new login to pick up the `semanage login` changes
+    ssh localhost -o StrictHostKeyChecking=no env -C "$PWD/.." $TEST_COMMAND
   /main:
     summary: Run the testsuite
     duration: 20m
-    test: make -C .. test
+    environment:
+      TEST_COMMAND: make test
   /nfs:
     summary: Run the NFS tests
     tag: [nfs]
     duration: 25m
     require+: [nfs-utils]
-    test: env -C .. bash -x ./tools/nfs.sh
+    environment:
+      TEST_COMMAND: bash -x ./tools/nfs.sh
 /avc-check:
   summary: Check unwanted denials
   order: 4
@@ -164,10 +189,6 @@
     set -ex
 
     make -C ../policy unload || true
-    if [ "$STS_ROOT_DOMAIN" = sysadm_t ]; then
-      semanage boolean --modify --off ssh_sysadm_login
-      semanage login --modify -s unconfined_u root
-    fi
     if [ "$STS_KERNEL" = secnext ]; then
       semodule -X 456 -r base
       env -C /usr/share/selinux/devel/include/support mv all_perms.spt.orig all_perms.spt
