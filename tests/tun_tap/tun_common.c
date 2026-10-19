@@ -50,6 +50,22 @@ int persist(int fd, int op, char *name, bool verbose)
 	return 0;
 }
 
+int set_owner(int fd, uid_t owner, bool verbose)
+{
+	int result;
+
+	result = ioctl(fd, TUNSETOWNER, owner);
+	if (result < 0) {
+		fprintf(stderr, "Failed ioctl(TUNSETOWNER): %s\n",
+			strerror(errno));
+		return errno;
+	}
+	if (verbose)
+		printf("ioctl(TUNSETOWNER) uid: %u\n", owner);
+
+	return 0;
+}
+
 int tunsetqueue(int fd, int op, char *name, bool verbose)
 {
 	int result;

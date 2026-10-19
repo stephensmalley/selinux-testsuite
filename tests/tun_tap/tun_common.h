@@ -16,6 +16,8 @@ extern int open_dev(int *fd, char *test_str, bool verbose);
 extern int setiff(int fd, struct ifreq *ifr, bool verbose);
 /* Persistent state 'op': 0 = unset, 1 = set */
 extern int persist(int fd, int op, char *name, bool verbose);
+/* Set the device owner to the given uid */
+extern int set_owner(int fd, uid_t owner, bool verbose);
 /* Queue state 'op': 0 = IFF_DETACH_QUEUE, 1 = IFF_ATTACH_QUEUE */
 extern int tunsetqueue(int fd, int op, char *name, bool verbose);
 extern int switch_context(const char *newcon, bool verbose);

@@ -86,6 +86,18 @@ int main(int argc, char *argv[])
 
 	strcpy(alloc_name, ifr.ifr_name);
 
+	/*
+	 * Set an owner, so that reattaching from the new context relies
+	 * only on the tun_socket relabel permissions under test, and not
+	 * on the kernel allowing anyone to attach to a persistent device
+	 * with neither owner nor group set (which kernel commit
+	 * 3ca459eaba1b ("tun: fix group permission check") stopped
+	 * allowing, until it was reverted).
+	 */
+	result = set_owner(fd1, getuid(), verbose);
+	if (result != 0)
+		goto err1;
+
 	/* Make this name persist */
 	result = persist(fd1, 1, alloc_name, verbose);
 	if (result != 0)
