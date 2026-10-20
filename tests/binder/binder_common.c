@@ -127,12 +127,12 @@ void print_trans_data(const struct binder_transaction_data *txn_in)
 		}
 #if HAVE_BINDERFS
 		printf("\tflags: priority: 0x%lx accept FDS: %s request security CTX: %s\n",
-		       (long unsigned)obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
+		       (long unsigned)(obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK),
 		       obj->flags & FLAT_BINDER_FLAG_ACCEPTS_FDS ? "YES" : "NO",
 		       obj->flags & FLAT_BINDER_FLAG_TXN_SECURITY_CTX ? "YES" : "NO");
 #else
 		printf("\tflags: priority: 0x%lx accept FDS: %s\n",
-		       (long unsigned)obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK,
+		       (long unsigned)(obj->flags & FLAT_BINDER_FLAG_PRIORITY_MASK),
 		       obj->flags & FLAT_BINDER_FLAG_ACCEPTS_FDS ? "YES" : "NO");
 #endif
 		printf("\tcookie: %llx\n", (long long unsigned)obj->cookie);
